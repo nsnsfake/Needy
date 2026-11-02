@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Calc & Visualizer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #2563eb; --secondary: #10b981; --danger: #ef4444; --bg: #f1f5f9; --card: #ffffff; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); display: flex; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .container { background: var(--card); padding: 2rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
+        h2 { text-align: center; color: #1e293b; margin-bottom: 20px; }
+        .toggle-box { text-align: center; margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        .gst-area { margin: 20px 0; padding: 15px; background: #ecfdf5; border-radius: 8px; }
+        button { width: 100%; padding: 14px; margin-top: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; }
+        #typeToggle { background: var(--secondary); color: white; }
+        .calc-btn { background: var(--primary); color: white; margin-top: 15px; }
+        .clear-btn { background: transparent; color: var(--danger); text-decoration: underline; display: block; text-align: center; margin: 10px auto; }
+        .result-box { margin-top: 20px; padding: 15px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 0.9rem; }
+        .chart-container { margin-top: 30px; height: 300px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Finance Calc & Visualizer</h2>
+    
+    <div class="toggle-box">
+        <button id="typeToggle" onclick="toggleMode()">Switch to Compound Interest</button>
+        <p id="modeDisplay">Mode: <strong>Simple Interest</strong></p>
+    </div>
+
+    <div class="input-grid">
+        <div class="input-group">
+            <label>Principal (P)</label>
+            <input type="number" id="p" class="trigger" placeholder="e.g. 1000">
+        </div>
+        <div class="input-group">
+            <label>Total Amount (A)</label>
+            <input type="number" id="a" class="trigger" placeholder="Target Amount">
+        </div>
+        <div class="input-group">
+            <label>Interest Rate (%)</label>
+            <input type="number" id="r" class="trigger" placeholder="e.g. 5">
+        </div>
+        <div class="input-group">
+            <label>Rate Frequency</label>
+            <select id="rUnit" class="trigger">
+                <option value="yearly">Per Year</option>
+                <option value="monthly">Per Month</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Time Value</label>
+            <input type="number" id="t" class="trigger" placeholder="e.g. 2">
+        </div>
+        <div class="input-group">
+            <label>Time Unit</label>
+            <select id="tUnit" class="trigger">
+                <option value="years">Years</option>
+                <option value="months">Months</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="gst-area">
+        <label style="font-size: 0.75rem; font-weight: 700; color: #065f46;">GST % ON INTEREST</label>
+        <input type="number" id="gst" placeholder="e.g. 18" class="trigger">
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">Calculate & Update Chart</button>
+    <a href="#" class="clear-btn" onclick="resetAll()">Clear All Data</a>
+
+    <div id="out" class="result-box">Leave one field (P, A, R, or T) empty to solve for it.</div>
+
+    <div class="chart-container">
+        <canvas id="growthChart"></canvas>
+    </div>
+</div>
+
+<script>
+    let isCompound = false;
+    let myChart = null;
+
+    // Reset A if user changes P, R, or T
+    document.querySelectorAll('.trigger').forEach(el => {
+        el.addEventListener('input', (e) => {
+            if (e.target.id !== 'a') document.getElementById('a').value = '';
+            document.getElementById('out').innerText = "Inputs changed. Press Calculate.";
+        });
+    });
+
+    function toggleMode() {
+        isCompound = !isCompound;
+        document.getElementById('typeToggle').innerText = isCompound ? "Switch to Simple Interest" : "Switch to Compound Interest";
+        document.getElementById('modeDisplay').innerHTML = `Mode: <strong>${isCompound ? 'Compound' : 'Simple'} Interest</strong>`;
+        document.getElementById('a').value = '';
+    }
+
+    function calculate() {
+        let P = parseFloat(document.getElementById('p').value);
+        let rateInput = parseFloat(document.getElementById('r').value);
+        let rUnit = document.getElementById('rUnit').value;
+        let tVal = parseFloat(document.getElementById('t').value);
+        let tUnit = document.getElementById('tUnit').value;
+        let A = parseFloat(document.getElementById('a').value);
+        let gstRate = parseFloat(document.getElementById('gst').value) || 0;
+
+        // 1. Normalize Rate to Annual Decimal
+        let annualR = (rUnit === 'monthly') ? (rateInput * 12) / 100 : rateInput / 100;
+        // 2. Normalize Time to Years
+        let T = (tUnit === 'months') ? tVal / 12 : tVal;
+
+        let solvedFor = "";
+
+        if (isNaN(A)) {
+            A = isCompound ? P * Math.pow((1 + annualR), T) : P * (1 + annualR * T);
+            document.getElementById('a').value = A.toFixed(2);
+            solvedFor = "Total Amount";
+        } else if (isNaN(P)) {
+            P = isCompound ? A / Math.pow((1 + annualR), T) : A / (1 + annualR * T);
+            document.getElementById('p').value = P.toFixed(2);
+            solvedFor = "Principal";
+        } else if (isNaN(rateInput)) {
+            let calculatedR = isCompound ? (Math.pow((A / P), 1 / T) - 1) : (A / P - 1) / T;
+            document.getElementById('r').value = (rUnit === 'monthly' ? (calculatedR / 12) * 100 : calculatedR * 100).toFixed(2);
+            annualR = calculatedR;
+            solvedFor = "Interest Rate";
+        } else if (isNaN(tVal)) {
+            let calculatedT = isCompound ? Math.log(A / P) / Math.log(1 + annualR) : (A / P - 1) / annualR;
+            document.getElementById('t').value = (tUnit === 'months' ? calculatedT * 12 : calculatedT).toFixed(2);
+            T = calculatedT;
+            solvedFor = "Time";
+        }
+
+        let interest = A - P;
+        let gstVal = (interest * gstRate) / 100;
+        
+        document.getElementById('out').innerHTML = `
+            <strong>Success! Solved for ${solvedFor}</strong><br>
+            Interest Component: ${interest.toFixed(2)}<br>
+            GST on Interest: ${gstVal.toFixed(2)}<br>
+            <strong style="color:var(--primary)">Grand Total (A + GST): ${(A + gstVal).toFixed(2)}</strong>
+        `;
+
+        updateChart(P, annualR, T);
+    }
+
+    function updateChart(P, r, T) {
+        const labels = [];
+        const simpleData = [];
+        const compoundData = [];
+        const steps = 10; 
+        
+        for (let i = 0; i <= steps; i++) {
+            let currentTime = (T / steps) * i;
+            labels.push(currentTime.toFixed(1) + "Y");
+            simpleData.push((P * (1 + r * currentTime)).toFixed(2));
+            compoundData.push((P * Math.pow((1 + r), currentTime)).toFixed(2));
+        }
+
+        if (myChart) myChart.destroy();
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Simple Interest', data: simpleData, borderColor: '#94a3b8', borderDash: [5, 5], fill: false },
+                    { label: 'Compound Interest', data: compoundData, borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    function resetAll() {
+        document.querySelectorAll('input').forEach(i => i.value = '');
+        if(myChart) myChart.destroy();
+        document.getElementById('out').innerText = "Fields cleared.";
+    }
+</script>
+</body>
+</html>

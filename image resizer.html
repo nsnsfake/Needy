@@ -1,0 +1,74 @@
+<div style="font-family: sans-serif; padding: 20px; border: 1px solid #ccc; border-radius: 8px; max-width: 400px;">
+  <input type="file" id="upload" accept="image/*" style="margin-bottom: 15px;"><br>
+  
+  <label><input type="checkbox" id="lockRatio" checked> Lock Aspect Ratio</label><br><br>
+  
+  <input type="number" id="width" placeholder="Width (px)" style="width: 80px;"> x 
+  <input type="number" id="height" placeholder="Height (px)" style="width: 80px;">
+  
+  <button onclick="downloadImage()" style="margin-left: 10px; cursor: pointer;">Download</button>
+</div>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<script>
+let originalRatio = 1;
+const upload = document.getElementById('upload');
+const wInput = document.getElementById('width');
+const hInput = document.getElementById('height');
+const lock = document.getElementById('lockRatio');
+
+// 1. Capture original dimensions when file is uploaded
+upload.addEventListener('change', function(e) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+            wInput.value = img.width;
+            hInput.value = img.height;
+            originalRatio = img.height / img.width;
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(e.target.files[0]);
+});
+
+// 2. Auto-calculate Width if Height changes
+hInput.addEventListener('input', () => {
+    if (lock.checked) wInput.value = Math.round(hInput.value / originalRatio);
+});
+
+// 3. Auto-calculate Height if Width changes
+wInput.addEventListener('input', () => {
+    if (lock.checked) hInput.value = Math.round(wInput.value * originalRatio);
+});
+
+// 4. The Resizing Engine
+function downloadImage() {
+    const file = upload.files[0];
+    if (!file) return alert("Select an image first!");
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = parseInt(wInput.value);
+            canvas.height = parseInt(hInput.value);
+            
+            // Draw & Scale
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // Trigger Download
+            const link = document.createElement('a');
+            link.download = 'resized-image.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+</script>

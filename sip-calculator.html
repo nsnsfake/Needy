@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power of Compounding</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* subtle gray background for desktop */
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* Mobile App Container Simulation */
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            background: #ffffff;
+            min-height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        @media (min-width: 481px) {
+            .app-container {
+                min-height: 850px;
+                height: 90vh;
+                margin-top: 2vh;
+                margin-bottom: 2vh;
+                border-radius: 1.5rem;
+                overflow: hidden;
+            }
+        }
+
+        /* Hide scrollbar for clean look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Custom Range Slider Styles */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            position: relative;
+            z-index: 10;
+        }
+        
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Track */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 2px;
+            cursor: pointer;
+            border-radius: 1px;
+            background: transparent; /* Background managed by JS inline style for fill effect */
+        }
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 2px;
+            cursor: pointer;
+            border-radius: 1px;
+            background: transparent;
+        }
+
+        /* Thumb */
+        input[type=range]::-webkit-slider-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #2563eb; /* Blue-600 */
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -11px; /* Align with 2px track */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 2px solid white;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 2px solid white;
+        }
+
+        /* Slider Track background div (behind native input) */
+        .slider-track-bg {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #cbd5e1; /* slate-300 */
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+        .slider-track-fill {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            height: 2px;
+            background: #2563eb;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+
+        /* Tick Marks */
+        .tick-dot {
+            width: 4px;
+            height: 4px;
+            background-color: #2563eb;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+        }
+        
+        .tick-dot.inactive {
+            background-color: #94a3b8;
+        }
+
+        /* Donut Chart */
+        .donut-wrapper {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 0 auto;
+        }
+        .donut {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            /* Gradient updated via JS */
+            background: conic-gradient(#4caf50 0% 62%, #7986cb 62% 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .donut-inner {
+            width: 60%;
+            height: 60%;
+            background-color: #f0f4fd; /* match background */
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Header -->
+    <div class="flex justify-between items-center p-5 pb-2">
+        <h1 class="text-xl font-bold text-slate-700">Power of Compounding</h1>
+        <button class="text-slate-500 hover:text-slate-800 transition-colors" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Main Tabs -->
+    <div class="flex border-b border-slate-200 mt-2">
+        <button id="tab-btn-1" class="flex-1 py-3 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 transition-colors">
+            I know my investment amount
+        </button>
+        <button id="tab-btn-2" class="flex-1 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">
+            I know my goal amount
+        </button>
+    </div>
+
+    <!-- Scrollable Content Area -->
+    <div class="flex-1 overflow-y-auto no-scrollbar relative">
+        
+        <!-- ================= TAB 1 CONTENT ================= -->
+        <div id="tab-content-1" class="flex flex-col h-full">
+            
+            <div class="p-5">
+                <!-- Sub Tabs (Visual only for this scope, focused on Monthly SIP) -->
+                <div class="flex gap-3 mb-6">
+                    <button class="flex-1 py-2 text-sm font-semibold text-blue-600 bg-white border border-blue-600 rounded-lg">Monthly SIP</button>
+                    <button class="flex-1 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg">Yearly SIP</button>
+                    <button class="flex-1 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg">Lumpsum</button>
+                </div>
+
+                <!-- Input: Invest Amount -->
+                <div class="mb-8">
+                    <div class="flex items-center gap-2 mb-2">
+                        <label class="text-slate-800 font-semibold text-[15px]">I want to invest</label>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-50 border border-pink-100 text-fuchsia-700 text-[10px] font-bold tracking-wide">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" /></svg>
+                            Pro Tip
+                        </span>
+                    </div>
+                    <div class="relative flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-shadow">
+                        <span class="pl-4 text-slate-400 font-medium">₹</span>
+                        <input type="text" id="t1-invest-amount" value="2,500" class="w-full py-3 px-2 text-slate-800 font-semibold focus:outline-none" inputmode="numeric">
+                        <span class="pr-4 text-slate-500 text-sm">/month</span>
+                    </div>
+                </div>
+
+                <!-- Sliders Container -->
+                <div class="space-y-8">
+                    
+                    <!-- Invest For Slider -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-slate-800 font-semibold text-[15px]">Invest for</label>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-50 border border-pink-100 text-fuchsia-700 text-[10px] font-bold tracking-wide">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002zM8 16v-1h4v1a2 2 0 11-4 0z" /></svg>
+                                    Pro Tip
+                                </span>
+                            </div>
+                            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-1.5 w-24">
+                                <input type="number" id="t1-inv-years-input" value="5" min="0" max="40" class="w-full text-center font-bold text-slate-800 focus:outline-none">
+                                <span class="text-slate-400 text-xs ml-1">years</span>
+                            </div>
+                        </div>
+                        <div class="relative pt-2 pb-6" id="t1-slider-container-1">
+                            <div class="slider-track-bg"></div>
+                            <div class="slider-track-fill" id="t1-fill-1" style="width: 12.5%;"></div>
+                            <!-- Ticks generated via JS -->
+                            <input type="range" id="t1-inv-years" min="0" max="40" value="5" step="1">
+                        </div>
+                    </div>
+
+                    <!-- Stay Invested For Slider -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-slate-800 font-semibold text-[15px]">Stay invested for</label>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-50 border border-pink-100 text-fuchsia-700 text-[10px] font-bold tracking-wide">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002zM8 16v-1h4v1a2 2 0 11-4 0z" /></svg>
+                                    Pro Tip
+                                </span>
+                            </div>
+                            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-1.5 w-24">
+                                <input type="number" id="t1-stay-years-input" value="15" min="0" max="40" class="w-full text-center font-bold text-slate-800 focus:outline-none">
+                                <span class="text-slate-400 text-xs ml-1">years</span>
+                            </div>
+                        </div>
+                        <div class="relative pt-2 pb-6" id="t1-slider-container-2">
+                            <div class="slider-track-bg"></div>
+                            <div class="slider-track-fill" id="t1-fill-2" style="width: 37.5%;"></div>
+                            <input type="range" id="t1-stay-years" min="0" max="40" value="15" step="1">
+                        </div>
+                    </div>
+
+                    <!-- Expected Return Slider -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-slate-800 font-semibold text-[15px]">Expected return</label>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-50 border border-pink-100 text-fuchsia-700 text-[10px] font-bold tracking-wide">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002zM8 16v-1h4v1a2 2 0 11-4 0z" /></svg>
+                                    Pro Tip
+                                </span>
+                            </div>
+                            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-1.5 w-24">
+                                <input type="number" id="t1-rate-input" value="8" min="0" max="35" class="w-full text-center font-bold text-slate-800 focus:outline-none">
+                                <span class="text-slate-400 text-xs ml-1">%</span>
+                            </div>
+                        </div>
+                        <div class="relative pt-2 pb-6" id="t1-slider-container-3">
+                            <div class="slider-track-bg"></div>
+                            <div class="slider-track-fill" id="t1-fill-3" style="width: 22.8%;"></div>
+                            <input type="range" id="t1-rate" min="0" max="35" value="8" step="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Section -->
+            <div class="bg-[#f0f4fd] mt-auto p-5 pb-8 rounded-t-3xl">
+                <p class="text-xs font-bold text-slate-500 mb-4 tracking-wider uppercase">Investment Details</p>
+                <div class="flex gap-4">
+                    <!-- Card 1 -->
+                    <div class="flex-1 bg-white rounded-2xl p-4 shadow-sm">
+                        <div class="w-10 h-10 mb-3 text-blue-600">
+                            <!-- Wallet SVG -->
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M16 12H18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M7 6V4C7 3.44772 7.44772 3 8 3H16C16.5523 3 17 3.44772 17 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p class="text-slate-600 font-medium text-sm mb-1">You Invest</p>
+                        <p class="text-2xl font-bold text-slate-800" id="t1-out-invested">₹1.5 L</p>
+                        <p class="text-xs text-slate-500 mt-1">over <span id="t1-out-inv-years">5</span> years</p>
+                    </div>
+                    
+                    <!-- Card 2 -->
+                    <div class="flex-1 bg-white rounded-2xl p-4 shadow-sm">
+                        <div class="w-10 h-10 mb-3 text-blue-600">
+                            <!-- Growth Chart SVG -->
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M12 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M6 20V14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M4 20H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p class="text-slate-600 font-medium text-sm mb-1">You Get</p>
+                        <p class="text-2xl font-bold text-slate-800" id="t1-out-get">₹3.96 L</p>
+                        <p class="text-xs text-slate-500 mt-1">after <span id="t1-out-stay-years">15</span> years</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2 CONTENT ================= -->
+        <div id="tab-content-2" class="hidden flex-col h-full relative">
+            
+            <div class="p-5 pb-24"> <!-- Padding bottom for sticky footer -->
+                <!-- Input: Goal Amount -->
+                <div class="mb-8">
+                    <label class="text-slate-800 font-semibold text-[15px] block mb-2">I want to save</label>
+                    <div class="relative flex items-center border border-slate-300 rounded-lg overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-shadow">
+                        <span class="pl-4 text-slate-400 font-medium">₹</span>
+                        <input type="text" id="t2-goal-amount" value="50,00,000" class="w-full py-3 px-2 text-slate-800 font-semibold focus:outline-none" inputmode="numeric">
+                    </div>
+                    <p class="text-sm text-slate-500 font-medium mt-2" id="t2-goal-words">Fifty Lakhs</p>
+                </div>
+
+                <!-- Sliders Container -->
+                <div class="space-y-8 mb-8">
+                    
+                    <!-- Invest For Slider -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-slate-800 font-semibold text-[15px]">Invest for</label>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-50 border border-pink-100 text-fuchsia-700 text-[10px] font-bold tracking-wide">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002zM8 16v-1h4v1a2 2 0 11-4 0z" /></svg>
+                                    Pro Tip
+                                </span>
+                            </div>
+                            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-1.5 w-24">
+                                <input type="number" id="t2-inv-years-input" value="5" min="0" max="40" class="w-full text-center font-bold text-slate-800 focus:outline-none">
+                                <span class="text-slate-400 text-xs ml-1">years</span>
+                            </div>
+                        </div>
+                        <div class="relative pt-2 pb-6" id="t2-slider-container-1">
+                            <div class="slider-track-bg"></div>
+                            <div class="slider-track-fill" id="t2-fill-1" style="width: 12.5%;"></div>
+                            <input type="range" id="t2-inv-years" min="0" max="40" value="5" step="1">
+                        </div>
+                    </div>
+
+                    <!-- Stay Invested For Slider -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-slate-800 font-semibold text-[15px]">Stay invested for</label>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-50 border border-pink-100 text-fuchsia-700 text-[10px] font-bold tracking-wide">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002zM8 16v-1h4v1a2 2 0 11-4 0z" /></svg>
+                                    Pro Tip
+                                </span>
+                            </div>
+                            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-1.5 w-24">
+                                <input type="number" id="t2-stay-years-input" value="15" min="0" max="40" class="w-full text-center font-bold text-slate-800 focus:outline-none">
+                                <span class="text-slate-400 text-xs ml-1">years</span>
+                            </div>
+                        </div>
+                        <div class="relative pt-2 pb-6" id="t2-slider-container-2">
+                            <div class="slider-track-bg"></div>
+                            <div class="slider-track-fill" id="t2-fill-2" style="width: 37.5%;"></div>
+                            <input type="range" id="t2-stay-years" min="0" max="40" value="15" step="1">
+                        </div>
+                    </div>
+
+                    <!-- Expected Return Slider -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-slate-800 font-semibold text-[15px]">Expected return</label>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-50 border border-pink-100 text-fuchsia-700 text-[10px] font-bold tracking-wide">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002zM8 16v-1h4v1a2 2 0 11-4 0z" /></svg>
+                                    Pro Tip
+                                </span>
+                            </div>
+                            <div class="flex items-center border border-slate-300 rounded-lg px-3 py-1.5 w-24">
+                                <input type="number" id="t2-rate-input" value="8" min="0" max="35" class="w-full text-center font-bold text-slate-800 focus:outline-none">
+                                <span class="text-slate-400 text-xs ml-1">%</span>
+                            </div>
+                        </div>
+                        <div class="relative pt-2 pb-6" id="t2-slider-container-3">
+                            <div class="slider-track-bg"></div>
+                            <div class="slider-track-fill" id="t2-fill-3" style="width: 22.8%;"></div>
+                            <input type="range" id="t2-rate" min="0" max="35" value="8" step="1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output Chart Section -->
+                <div class="bg-[#f0f4fd] p-6 rounded-3xl pb-16">
+                    <div class="donut-wrapper">
+                        <div class="donut" id="donut-chart">
+                            <div class="donut-inner"></div>
+                        </div>
+                        
+                        <!-- Floating Label 1 -->
+                        <div class="absolute top-[40%] right-[-10%] bg-white rounded-xl shadow-md p-3 text-center min-w-[120px] transform translate-y-[-50%] border border-slate-100">
+                            <p class="text-[11px] font-semibold text-[#7986cb] mb-0.5">Total Investment</p>
+                            <p class="text-sm font-bold text-slate-800" id="t2-out-inv">₹ 18.9 L</p>
+                        </div>
+                        
+                        <!-- Floating Label 2 -->
+                        <div class="absolute bottom-[0%] left-[-5%] bg-white rounded-xl shadow-md p-3 text-center min-w-[120px] transform border border-slate-100">
+                            <p class="text-[11px] font-semibold text-[#4caf50] mb-0.5">Wealth Gained</p>
+                            <p class="text-sm font-bold text-slate-800" id="t2-out-gained">₹ 31.1 L</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Footer for Tab 2 -->
+            <div class="absolute bottom-0 left-0 right-0 bg-[#e0f2f1] px-6 py-4 flex justify-between items-center rounded-b-3xl">
+                <p class="font-semibold text-slate-800 text-lg">Monthly Investment</p>
+                <p class="font-bold text-slate-900 text-xl" id="t2-out-monthly">₹31,547</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- UTILS ---
+        
+        // Format number to Indian Currency string (e.g. 50,00,000)
+        const formatCurrency = (num) => {
+            return Math.round(num).toLocaleString('en-IN');
+        };
+
+        // Parse comma string to number
+        const parseCurrency = (str) => {
+            return parseFloat(str.replace(/,/g, '')) || 0;
+        };
+
+        // Format to Lakhs/Crores for display cards
+        const formatLakhsCrores = (num) => {
+            if (num >= 10000000) return (num / 10000000).toFixed(2) + ' Cr';
+            if (num >= 100000) return (num / 100000).toFixed(2) + ' L';
+            return formatCurrency(num);
+        };
+
+        // Simple Number to Words (Lakhs/Crores)
+        const numberToWords = (num) => {
+            if(num === 0) return "Zero";
+            if (num >= 10000000) {
+                let cr = num / 10000000;
+                return (Number.isInteger(cr) ? cr : cr.toFixed(2)) + " Crore" + (cr > 1 ? "s" : "");
+            }
+            if (num >= 100000) {
+                let L = num / 100000;
+                return (Number.isInteger(L) ? L : L.toFixed(2)) + " Lakh" + (L > 1 ? "s" : "");
+            }
+            if(num >= 1000) return (num/1000).toFixed(1) + " Thousand";
+            return num.toString();
+        };
+
+        // Render Ticks for Sliders
+        const renderTicks = (containerId, max, step) => {
+            const container = document.getElementById(containerId);
+            const numTicks = max / step;
+            
+            // Container for tick text
+            const labelsContainer = document.createElement('div');
+            labelsContainer.className = 'flex justify-between absolute bottom-0 left-0 w-full text-[10px] text-slate-400 font-medium px-[10px] pointer-events-none';
+            
+            for (let i = 0; i <= numTicks; i++) {
+                let val = i * step;
+                
+                // Add dot
+                const dot = document.createElement('div');
+                dot.className = `tick-dot tick-dot-${val}`;
+                let pct = (val / max) * 100;
+                dot.style.left = `calc(${pct}% + ${ (50 - pct) * 0.24 }px)`; // adjust for thumb offset
+                container.appendChild(dot);
+
+                // Add label
+                const label = document.createElement('span');
+                label.innerText = val;
+                labelsContainer.appendChild(label);
+            }
+            container.appendChild(labelsContainer);
+        };
+
+        // Setup Sliders visually
+        const initSliders = () => {
+            // Tab 1
+            renderTicks('t1-slider-container-1', 40, 5);
+            renderTicks('t1-slider-container-2', 40, 5);
+            renderTicks('t1-slider-container-3', 35, 5);
+            // Tab 2
+            renderTicks('t2-slider-container-1', 40, 5);
+            renderTicks('t2-slider-container-2', 40, 5);
+            renderTicks('t2-slider-container-3', 35, 5);
+        };
+
+        // Update Slider Fill and Dots
+        const updateSliderUI = (sliderId, fillId, containerId) => {
+            const slider = document.getElementById(sliderId);
+            const fill = document.getElementById(fillId);
+            const container = document.getElementById(containerId);
+            
+            const min = parseFloat(slider.min);
+            const max = parseFloat(slider.max);
+            const val = parseFloat(slider.value);
+            
+            const percentage = ((val - min) / (max - min)) * 100;
+            fill.style.width = `${percentage}%`;
+
+            // Update dots color based on position
+            const dots = container.querySelectorAll('.tick-dot');
+            dots.forEach((dot, index) => {
+                let step = max / (dots.length - 1);
+                let dotVal = index * step;
+                if (dotVal <= val) {
+                    dot.classList.remove('inactive');
+                } else {
+                    dot.classList.add('inactive');
+                }
+            });
+        };
+
+        // --- CORE MATH ---
+        // Calculate Future Value (SIP End of Month + Wait Period)
+        const calculateFV = (P, yearsInvested, yearsStay, annualRate) => {
+            const r = annualRate / 1200; // Monthly rate
+            const n = yearsInvested * 12; // Months invested
+            const waitYears = yearsStay - yearsInvested;
+            
+            let fvPhase1 = 0;
+            if (r === 0) {
+                fvPhase1 = P * n;
+            } else {
+                fvPhase1 = P * ((Math.pow(1 + r, n) - 1) / r);
+            }
+            
+            // Compound annually for waiting period (Matches Tab 1 screenshot calculation)
+            const fvFinal = fvPhase1 * Math.pow(1 + annualRate/100, waitYears);
+            return fvFinal;
+        };
+
+        // --- TAB 1 LOGIC ---
+        const calcTab1 = () => {
+            let pStr = document.getElementById('t1-invest-amount').value;
+            let P = parseCurrency(pStr);
+            let invYears = parseFloat(document.getElementById('t1-inv-years').value);
+            let stayYears = parseFloat(document.getElementById('t1-stay-years').value);
+            let rate = parseFloat(document.getElementById('t1-rate').value);
+
+            // Constraint logic
+            if (stayYears < invYears) {
+                stayYears = invYears;
+                document.getElementById('t1-stay-years').value = stayYears;
+                document.getElementById('t1-stay-years-input').value = stayYears;
+                updateSliderUI('t1-stay-years', 't1-fill-2', 't1-slider-container-2');
+            }
+
+            let totalInvested = P * invYears * 12;
+            let finalValue = calculateFV(P, invYears, stayYears, rate);
+
+            // Update UI
+            document.getElementById('t1-out-invested').innerText = '₹' + formatLakhsCrores(totalInvested);
+            document.getElementById('t1-out-get').innerText = '₹' + formatLakhsCrores(finalValue);
+            document.getElementById('t1-out-inv-years').innerText = invYears;
+            document.getElementById('t1-out-stay-years').innerText = stayYears;
+        };
+
+        // --- TAB 2 LOGIC ---
+        const calcTab2 = () => {
+            let goalStr = document.getElementById('t2-goal-amount').value;
+            let Goal = parseCurrency(goalStr);
+            let invYears = parseFloat(document.getElementById('t2-inv-years').value);
+            let stayYears = parseFloat(document.getElementById('t2-stay-years').value);
+            let rate = parseFloat(document.getElementById('t2-rate').value);
+
+            // Constraint logic
+            if (stayYears < invYears) {
+                stayYears = invYears;
+                document.getElementById('t2-stay-years').value = stayYears;
+                document.getElementById('t2-stay-years-input').value = stayYears;
+                updateSliderUI('t2-stay-years', 't2-fill-2', 't2-slider-container-2');
+            }
+
+            // Reverse Calculation
+            const r = rate / 1200;
+            const n = invYears * 12;
+            const waitYears = stayYears - invYears;
+
+            let requiredMonthly = 0;
+            if (Goal > 0 && n > 0) {
+                let factor1 = (r === 0) ? n : ((Math.pow(1 + r, n) - 1) / r);
+                let compoundFactor = Math.pow(1 + rate/100, waitYears);
+                let totalFactor = factor1 * compoundFactor;
+                requiredMonthly = totalFactor > 0 ? Goal / totalFactor : 0;
+            }
+
+            let totalInvested = requiredMonthly * n;
+            let wealthGained = Goal - totalInvested;
+            if(wealthGained < 0) wealthGained = 0;
+
+            // Update UI
+            document.getElementById('t2-goal-words').innerText = numberToWords(Goal);
+            document.getElementById('t2-out-monthly').innerText = '₹' + formatCurrency(requiredMonthly);
+            document.getElementById('t2-out-inv').innerText = '₹ ' + formatLakhsCrores(totalInvested);
+            document.getElementById('t2-out-gained').innerText = '₹ ' + formatLakhsCrores(wealthGained);
+
+            // Update Chart
+            let chartElement = document.getElementById('donut-chart');
+            if (Goal > 0) {
+                let gainPct = (wealthGained / Goal) * 100;
+                // Green for gain, Blue/Indigo for Invested
+                chartElement.style.background = `conic-gradient(#4caf50 0% ${gainPct}%, #7986cb ${gainPct}% 100%)`;
+            } else {
+                chartElement.style.background = `#e2e8f0`;
+            }
+        };
+
+        // --- EVENT LISTENERS ---
+        
+        // Link Text Inputs to format with commas
+        const formatInputOnBlur = (el) => {
+            el.addEventListener('blur', (e) => {
+                let val = parseCurrency(e.target.value);
+                e.target.value = formatCurrency(val);
+                calcTab1();
+                calcTab2();
+            });
+            // Restrict to numbers
+            el.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9,]/g, '');
+                if(el.id.includes('t1')) calcTab1();
+                else calcTab2();
+            });
+        };
+        formatInputOnBlur(document.getElementById('t1-invest-amount'));
+        formatInputOnBlur(document.getElementById('t2-goal-amount'));
+
+        // Generic function to sync Slider and Number Input
+        const syncSliderAndInput = (sliderId, inputId, fillId, containerId, calcFunc) => {
+            const slider = document.getElementById(sliderId);
+            const input = document.getElementById(inputId);
+
+            slider.addEventListener('input', (e) => {
+                input.value = e.target.value;
+                updateSliderUI(sliderId, fillId, containerId);
+                calcFunc();
+            });
+
+            input.addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value);
+                let min = parseFloat(slider.min);
+                let max = parseFloat(slider.max);
+                
+                if (isNaN(val)) return;
+                
+                // Clamp value
+                if (val > max) val = max;
+                if (val < min) val = min;
+                
+                slider.value = val;
+                updateSliderUI(sliderId, fillId, containerId);
+                calcFunc();
+            });
+            
+            // Fix input visually on blur if it was out of bounds
+            input.addEventListener('blur', (e) => {
+                 input.value = slider.value;
+            });
+        };
+
+        // Setup sync for Tab 1
+        syncSliderAndInput('t1-inv-years', 't1-inv-years-input', 't1-fill-1', 't1-slider-container-1', calcTab1);
+        syncSliderAndInput('t1-stay-years', 't1-stay-years-input', 't1-fill-2', 't1-slider-container-2', calcTab1);
+        syncSliderAndInput('t1-rate', 't1-rate-input', 't1-fill-3', 't1-slider-container-3', calcTab1);
+
+        // Setup sync for Tab 2
+        syncSliderAndInput('t2-inv-years', 't2-inv-years-input', 't2-fill-1', 't2-slider-container-1', calcTab2);
+        syncSliderAndInput('t2-stay-years', 't2-stay-years-input', 't2-fill-2', 't2-slider-container-2', calcTab2);
+        syncSliderAndInput('t2-rate', 't2-rate-input', 't2-fill-3', 't2-slider-container-3', calcTab2);
+
+
+        // Tab Switching Logic
+        const tab1Btn = document.getElementById('tab-btn-1');
+        const tab2Btn = document.getElementById('tab-btn-2');
+        const content1 = document.getElementById('tab-content-1');
+        const content2 = document.getElementById('tab-content-2');
+
+        tab1Btn.addEventListener('click', () => {
+            tab1Btn.classList.replace('text-slate-500', 'text-blue-600');
+            tab1Btn.classList.add('border-b-2', 'border-blue-600');
+            tab2Btn.classList.replace('text-blue-600', 'text-slate-500');
+            tab2Btn.classList.remove('border-b-2', 'border-blue-600');
+            
+            content1.classList.remove('hidden');
+            content1.classList.add('flex');
+            content2.classList.add('hidden');
+            content2.classList.remove('flex');
+            
+            // Recalculate to ensure layout is fresh
+            calcTab1();
+        });
+
+        tab2Btn.addEventListener('click', () => {
+            tab2Btn.classList.replace('text-slate-500', 'text-blue-600');
+            tab2Btn.classList.add('border-b-2', 'border-blue-600');
+            tab1Btn.classList.replace('text-blue-600', 'text-slate-500');
+            tab1Btn.classList.remove('border-b-2', 'border-blue-600');
+            
+            content2.classList.remove('hidden');
+            content2.classList.add('flex');
+            content1.classList.add('hidden');
+            content1.classList.remove('flex');
+            
+            calcTab2();
+        });
+
+        // Initialize Everything
+        initSliders();
+        
+        // Initial UI Update for Sliders
+        updateSliderUI('t1-inv-years', 't1-fill-1', 't1-slider-container-1');
+        updateSliderUI('t1-stay-years', 't1-fill-2', 't1-slider-container-2');
+        updateSliderUI('t1-rate', 't1-fill-3', 't1-slider-container-3');
+        
+        updateSliderUI('t2-inv-years', 't2-fill-1', 't2-slider-container-1');
+        updateSliderUI('t2-stay-years', 't2-fill-2', 't2-slider-container-2');
+        updateSliderUI('t2-rate', 't2-fill-3', 't2-slider-container-3');
+
+        // Initial Calculations
+        calcTab1();
+        calcTab2();
+
+    });
+</script>
+</body>
+</html>

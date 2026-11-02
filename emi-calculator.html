@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMI Ledger — Loan Repayment Calculator</title>
+<style>
+  :root{
+    --ink:#17231D;
+    --ink-soft:#2A392F;
+    --paper:#F4EFE2;
+    --paper-deep:#ECE4CF;
+    --rule:#D8CBA6;
+    --rule-soft:#E4DAC0;
+    --gold:#B8912F;
+    --gold-deep:#8F6F1F;
+    --green:#2F6F4E;
+    --green-deep:#1F4D3A;
+    --rust:#A84B2A;
+    --rust-deep:#83381E;
+    --muted:#6B6255;
+    --cover:#101B15;
+    --cover-deep:#0B1310;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #1B2C22 0%, transparent 60%),
+      linear-gradient(180deg, var(--cover) 0%, var(--cover-deep) 100%);
+    color:var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    min-height:100vh;
+    padding: 48px 16px 80px;
+  }
+  .display{
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  }
+  .mono{
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", "Consolas", "Menlo", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .book{
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .stitch{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    padding-bottom:14px;
+  }
+  .stitch span{
+    width:6px;height:6px;border-radius:50%;
+    background: var(--gold);
+    opacity:.55;
+  }
+
+  .page{
+    background: var(--paper);
+    border-radius: 6px;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,.55), 0 2px 0 rgba(255,255,255,.04) inset;
+    padding: 44px 44px 36px;
+    position:relative;
+    overflow:hidden;
+  }
+  .page::before{
+    content:"";
+    position:absolute; left:0; top:0; bottom:0; width:64px;
+    background: repeating-linear-gradient(
+      transparent, transparent 27px, var(--rule-soft) 27px, var(--rule-soft) 28px
+    );
+    opacity:.5;
+    pointer-events:none;
+  }
+
+  header.top{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom:16px; margin-bottom:30px;
+  }
+  header.top .brand{
+    font-size:.68rem; letter-spacing:.14em; color:var(--muted); margin-bottom:6px;
+  }
+  header.top h1{
+    font-size:2.15rem; margin:0; font-weight:600; letter-spacing:.01em;
+  }
+  header.top .stamp{
+    text-align:right; font-size:.72rem; color:var(--muted); line-height:1.5;
+  }
+
+  /* ---- Input ledger lines ---- */
+  .field-row{
+    display:grid;
+    grid-template-columns: 190px 1fr 150px;
+    align-items:center;
+    gap:18px;
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--rule);
+  }
+  .field-row:first-of-type{ border-top: 1px dashed var(--rule); }
+  .field-label{
+    font-size:.95rem;
+    color:var(--ink-soft);
+  }
+  .field-label small{
+    display:block; color:var(--muted); font-size:.72rem; margin-top:2px;
+  }
+  input[type=range]{
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:2px; background:var(--rule);
+    border-radius:2px; outline:none; cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:16px; height:16px; border-radius:50%;
+    background: var(--gold);
+    border:3px solid var(--paper);
+    box-shadow:0 0 0 1px var(--gold-deep);
+    cursor:pointer;
+    margin-top:-1px;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%;
+    background: var(--gold); border:3px solid var(--paper);
+    box-shadow:0 0 0 1px var(--gold-deep); cursor:pointer;
+  }
+  .value-box{
+    display:flex; align-items:baseline; justify-content:flex-end; gap:2px;
+    border-bottom: 1px solid var(--ink);
+    padding-bottom:4px;
+  }
+  .value-box span.unit{ font-size:.8rem; color:var(--muted); }
+  .value-box input[type=text]{
+    width:100%; text-align:right; border:none; background:transparent;
+    font-size:1.05rem; color:var(--ink); outline:none; padding:0;
+  }
+
+  /* ---- Summary strip ---- */
+  .summary{
+    margin-top:32px;
+    display:grid;
+    grid-template-columns: 1.3fr 1fr 1fr 1fr;
+    gap:0;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .summary .cell{
+    padding:22px 20px;
+    border-left: 1px solid rgba(244,239,226,.14);
+  }
+  .summary .cell:first-child{ border-left:none; background: var(--green-deep); }
+  .summary .cell .k{
+    font-size:.66rem; letter-spacing:.1em; color:rgba(244,239,226,.6); margin-bottom:8px;
+  }
+  .summary .cell .v{
+    font-size:1.5rem; font-weight:600;
+  }
+  .summary .cell:first-child .v{ font-size:1.85rem; color:#F6E9C1; }
+  .summary .cell .sub{ font-size:.72rem; color:rgba(244,239,226,.55); margin-top:4px; }
+
+  /* ---- Charts section ---- */
+  .charts{
+    margin-top: 38px;
+    display:grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 28px;
+  }
+  .chart-card{
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:18px 18px 10px;
+    background: rgba(255,255,255,.25);
+  }
+  .chart-card h3{
+    font-size:.78rem; letter-spacing:.06em; margin:0 0 14px; color:var(--ink-soft);
+    font-weight:600;
+  }
+  .legend{
+    display:flex; gap:18px; margin-top:10px; flex-wrap:wrap;
+  }
+  .legend .item{ display:flex; align-items:center; gap:7px; font-size:.78rem; color:var(--ink-soft); }
+  .legend .swatch{ width:10px;height:10px;border-radius:2px; }
+
+  .tooltip-line{ pointer-events:none; }
+
+  /* ---- Table section ---- */
+  .table-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:40px; margin-bottom:14px;
+  }
+  .table-head h3{ margin:0; font-size:1rem; font-weight:600; }
+  .toggle{
+    display:flex; border:1px solid var(--ink); border-radius:20px; overflow:hidden;
+  }
+  .toggle button{
+    border:none; background:transparent; padding:6px 16px; font-size:.75rem;
+    letter-spacing:.04em; cursor:pointer; color:var(--ink); font-family:inherit;
+  }
+  .toggle button.active{ background:var(--ink); color:var(--paper); }
+
+  .schedule-wrap{
+    max-height: 420px; overflow-y:auto;
+    border:1px solid var(--rule);
+    border-radius:4px;
+  }
+  table{ width:100%; border-collapse:collapse; font-size:.85rem; }
+  thead th{
+    position:sticky; top:0;
+    background: var(--paper-deep);
+    text-align:right; padding:10px 14px;
+    font-weight:600; font-size:.7rem; letter-spacing:.05em; color:var(--muted);
+    border-bottom:1px solid var(--rule);
+  }
+  thead th:first-child, tbody td:first-child{ text-align:left; }
+  tbody td{
+    text-align:right; padding:8px 14px;
+    border-bottom:1px solid var(--rule-soft);
+  }
+  tbody tr:hover{ background: rgba(184,145,47,.08); }
+  tbody td.principal{ color:var(--green-deep); }
+  tbody td.interest{ color:var(--rust-deep); }
+  tbody tr.year-row{ background: rgba(23,35,29,.05); font-weight:600; }
+
+  footer.note{
+    margin-top:28px; font-size:.72rem; color:var(--muted); line-height:1.6;
+    border-top:1px dashed var(--rule); padding-top:16px;
+  }
+
+  @media (max-width: 720px){
+    .page{ padding:28px 20px 24px; }
+    .page::before{ display:none; }
+    .field-row{ grid-template-columns: 1fr; gap:8px; }
+    .value-box{ justify-content:flex-start; }
+    .summary{ grid-template-columns: 1fr 1fr; }
+    .charts{ grid-template-columns: 1fr; }
+    header.top{ flex-direction:column; align-items:flex-start; gap:10px; }
+    header.top .stamp{ text-align:left; }
+  }
+</style>
+</head>
+<body>
+<div class="book">
+  <div class="stitch"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="page">
+
+    <header class="top">
+      <div>
+        <div class="brand display">LOAN REPAYMENT</div>
+        <h1 class="display">EMI Calculator</h1>
+      </div>
+      <div class="stamp mono">
+        rate compounds monthly<br>
+        reducing balance method
+      </div>
+    </header>
+
+    <div class="inputs">
+      <div class="field-row">
+        <label class="field-label" for="amount">Loan amount<small>Principal borrowed</small></label>
+        <input type="range" id="amountRange" min="50000" max="20000000" step="10000" value="2500000">
+        <div class="value-box"><span class="unit">₹</span><input type="text" id="amount" class="mono" value="25,00,000" inputmode="numeric"></div>
+      </div>
+      <div class="field-row">
+        <label class="field-label" for="rate">Interest rate<small>Annual, %</small></label>
+        <input type="range" id="rateRange" min="1" max="20" step="0.05" value="8.5">
+        <div class="value-box"><input type="text" id="rate" class="mono" value="8.5"><span class="unit">% p.a.</span></div>
+      </div>
+      <div class="field-row">
+        <label class="field-label" for="tenure">Loan tenure<small>Years</small></label>
+        <input type="range" id="tenureRange" min="1" max="30" step="1" value="20">
+        <div class="value-box"><input type="text" id="tenure" class="mono" value="20"><span class="unit">yrs</span></div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="cell">
+        <div class="k">MONTHLY EMI</div>
+        <div class="v mono" id="emiOut">₹0</div>
+        <div class="sub" id="emiCount"></div>
+      </div>
+      <div class="cell">
+        <div class="k">PRINCIPAL</div>
+        <div class="v mono" id="principalOut">₹0</div>
+      </div>
+      <div class="cell">
+        <div class="k">TOTAL INTEREST</div>
+        <div class="v mono" id="interestOut">₹0</div>
+      </div>
+      <div class="cell">
+        <div class="k">TOTAL PAYMENT</div>
+        <div class="v mono" id="totalOut">₹0</div>
+      </div>
+    </div>
+
+    <div class="charts">
+      <div class="chart-card">
+        <h3>PRINCIPAL vs INTEREST</h3>
+        <div id="donutChart"></div>
+        <div class="legend">
+          <div class="item"><span class="swatch" style="background:var(--green)"></span>Principal <span id="pctPrincipal" class="mono"></span></div>
+          <div class="item"><span class="swatch" style="background:var(--rust)"></span>Interest <span id="pctInterest" class="mono"></span></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>OUTSTANDING BALANCE OVER TIME</h3>
+        <div id="balanceChart"></div>
+        <div class="legend">
+          <div class="item"><span class="swatch" style="background:var(--gold)"></span>Balance remaining</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-top:22px;">
+      <h3>CUMULATIVE PRINCIPAL vs INTEREST PAID</h3>
+      <div id="stackChart"></div>
+      <div class="legend">
+        <div class="item"><span class="swatch" style="background:var(--green)"></span>Cumulative principal paid</div>
+        <div class="item"><span class="swatch" style="background:var(--rust)"></span>Cumulative interest paid</div>
+      </div>
+    </div>
+
+    <div class="table-head">
+      <h3 class="display">Amortization schedule</h3>
+      <div class="toggle">
+        <button id="btnYearly" class="active">Yearly</button>
+        <button id="btnMonthly">Monthly</button>
+      </div>
+    </div>
+    <div class="schedule-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th id="periodHead">Year</th>
+            <th>EMI</th>
+            <th>Principal paid</th>
+            <th>Interest paid</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleBody"></tbody>
+      </table>
+    </div>
+
+    <footer class="note">
+      Figures are indicative, calculated on a reducing‑balance monthly‑compounding basis. Actual EMI, interest and tenure may vary by lender, processing fees, prepayments, and rate resets on floating‑rate loans.
+    </footer>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+
+  const amountRange = $('amountRange'), rateRange = $('rateRange'), tenureRange = $('tenureRange');
+  const amountBox = $('amount'), rateBox = $('rate'), tenureBox = $('tenure');
+
+  function formatINR(n){
+    n = Math.round(n);
+    const isNeg = n < 0; n = Math.abs(n);
+    let s = n.toString();
+    let last3 = s.slice(-3);
+    let rest = s.slice(0, -3);
+    if(rest !== '') last3 = ',' + last3;
+    rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+    return (isNeg?'-':'') + rest + last3;
+  }
+  function parseNum(str){
+    const n = parseFloat(String(str).replace(/[^0-9.]/g,''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  let state = { amount: 2500000, rate: 8.5, years: 20 };
+
+  function syncFromRanges(){
+    state.amount = parseFloat(amountRange.value);
+    state.rate = parseFloat(rateRange.value);
+    state.years = parseFloat(tenureRange.value);
+    amountBox.value = formatINR(state.amount);
+    rateBox.value = state.rate.toString();
+    tenureBox.value = state.years.toString();
+    recompute();
+  }
+
+  amountRange.addEventListener('input', syncFromRanges);
+  rateRange.addEventListener('input', syncFromRanges);
+  tenureRange.addEventListener('input', syncFromRanges);
+
+  amountBox.addEventListener('change', () => {
+    let v = parseNum(amountBox.value);
+    v = Math.min(Math.max(v, parseFloat(amountRange.min)), parseFloat(amountRange.max));
+    amountRange.value = v; syncFromRanges();
+  });
+  rateBox.addEventListener('change', () => {
+    let v = parseNum(rateBox.value);
+    v = Math.min(Math.max(v, parseFloat(rateRange.min)), parseFloat(rateRange.max));
+    rateRange.value = v; syncFromRanges();
+  });
+  tenureBox.addEventListener('change', () => {
+    let v = parseNum(tenureBox.value);
+    v = Math.min(Math.max(v, parseFloat(tenureRange.min)), parseFloat(tenureRange.max));
+    tenureRange.value = v; syncFromRanges();
+  });
+
+  let scheduleMonthly = [];
+  let viewMode = 'yearly';
+
+  function buildSchedule(P, annualRatePct, years){
+    const n = Math.round(years * 12);
+    const r = (annualRatePct / 12) / 100;
+    let emi;
+    if(r === 0){ emi = P / n; }
+    else { emi = P * r * Math.pow(1+r, n) / (Math.pow(1+r, n) - 1); }
+    let balance = P;
+    const rows = [];
+    for(let m = 1; m <= n; m++){
+      const interest = balance * r;
+      let principalPaid = emi - interest;
+      if(m === n){ principalPaid = balance; emi = principalPaid + interest; }
+      balance = Math.max(0, balance - principalPaid);
+      rows.push({ month: m, emi: (m===n? principalPaid+interest : emi), interest, principal: principalPaid, balance });
+    }
+    return { emi: rows.length ? (r===0 ? P/n : P * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1)) : 0, rows };
+  }
+
+  function svgEl(tag, attrs){
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for(const k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  function renderDonut(principal, interest){
+    const host = $('donutChart');
+    host.innerHTML = '';
+    const total = principal + interest;
+    const w = 220, h = 220, cx = w/2, cy = h/2, r = 78, stroke = 26;
+    const svg = svgEl('svg', {viewBox:`0 0 ${w} ${h}`, width:'100%', height:'auto', style:'max-width:220px;display:block;margin:0 auto;'});
+    const circumference = 2 * Math.PI * r;
+    const pPrincipal = total ? principal/total : 0;
+    const bg = svgEl('circle', {cx, cy, r, fill:'none', stroke:'var(--rule)', 'stroke-width':stroke});
+    svg.appendChild(bg);
+    const segPrincipal = svgEl('circle', {
+      cx, cy, r, fill:'none', stroke:'var(--green)', 'stroke-width':stroke,
+      'stroke-dasharray': `${circumference*pPrincipal} ${circumference}`,
+      'stroke-linecap':'butt',
+      transform:`rotate(-90 ${cx} ${cy})`
+    });
+    svg.appendChild(segPrincipal);
+    const segInterest = svgEl('circle', {
+      cx, cy, r, fill:'none', stroke:'var(--rust)', 'stroke-width':stroke,
+      'stroke-dasharray': `${circumference*(1-pPrincipal)} ${circumference}`,
+      'stroke-dashoffset': `${-circumference*pPrincipal}`,
+      'stroke-linecap':'butt',
+      transform:`rotate(-90 ${cx} ${cy})`
+    });
+    svg.appendChild(segInterest);
+    const label1 = svgEl('text', {x:cx, y:cy-6, 'text-anchor':'middle', 'font-size':'13', fill:'var(--ink)', 'font-family':'ui-monospace, monospace', 'font-weight':'600'});
+    label1.textContent = total ? Math.round(pPrincipal*100)+'% : '+Math.round((1-pPrincipal)*100)+'%' : '—';
+    svg.appendChild(label1);
+    const label2 = svgEl('text', {x:cx, y:cy+14, 'text-anchor':'middle', 'font-size':'9', fill:'var(--muted)', 'font-family':'ui-sans-serif, sans-serif'});
+    label2.textContent = 'principal : interest';
+    svg.appendChild(label2);
+    host.appendChild(svg);
+  }
+
+  function niceMax(v){
+    if(v <= 0) return 1;
+    const p = Math.pow(10, Math.floor(Math.log10(v)));
+    const n = v/p;
+    let m;
+    if(n <= 1) m = 1; else if(n<=2) m=2; else if(n<=5) m=5; else m=10;
+    return m*p;
+  }
+
+  function renderBalanceChart(rows){
+    const host = $('balanceChart');
+    host.innerHTML = '';
+    const w = 520, h = 220, padL = 54, padR = 14, padT = 14, padB = 26;
+    const plotW = w - padL - padR, plotH = h - padT - padB;
+    const svg = svgEl('svg', {viewBox:`0 0 ${w} ${h}`, width:'100%', height:'auto', style:'display:block;'});
+    const maxY = niceMax(rows[0] ? rows[0].balance : 1);
+    const n = rows.length;
+
+    // gridlines
+    for(let i=0;i<=4;i++){
+      const y = padT + plotH - (plotH*i/4);
+      const gl = svgEl('line', {x1:padL, y1:y, x2:padL+plotW, y2:y, stroke:'var(--rule)', 'stroke-width':1});
+      svg.appendChild(gl);
+      const t = svgEl('text', {x:padL-8, y:y+3, 'text-anchor':'end', 'font-size':'9', fill:'var(--muted)', 'font-family':'ui-monospace, monospace'});
+      t.textContent = formatShort(maxY*i/4);
+      svg.appendChild(t);
+    }
+
+    // area path
+    let d = `M ${padL} ${padT+plotH} `;
+    rows.forEach((row, i) => {
+      const x = padL + plotW * (i/(n-1||1));
+      const y = padT + plotH - plotH*(row.balance/maxY);
+      d += `L ${x.toFixed(2)} ${y.toFixed(2)} `;
+    });
+    d += `L ${padL+plotW} ${padT+plotH} Z`;
+    const area = svgEl('path', {d, fill:'var(--gold)', opacity:'0.18'});
+    svg.appendChild(area);
+
+    let dl = '';
+    rows.forEach((row, i) => {
+      const x = padL + plotW * (i/(n-1||1));
+      const y = padT + plotH - plotH*(row.balance/maxY);
+      dl += (i===0?'M':'L') + ` ${x.toFixed(2)} ${y.toFixed(2)} `;
+    });
+    const line = svgEl('path', {d:dl, fill:'none', stroke:'var(--gold-deep)', 'stroke-width':2});
+    svg.appendChild(line);
+
+    // x axis labels (years)
+    const yearsTotal = Math.ceil(n/12);
+    const step = Math.max(1, Math.round(yearsTotal/6));
+    for(let yr=0; yr<=yearsTotal; yr+=step){
+      const idx = Math.min(n-1, yr*12);
+      const x = padL + plotW * (idx/(n-1||1));
+      const t = svgEl('text', {x, y:h-8, 'text-anchor':'middle', 'font-size':'9', fill:'var(--muted)', 'font-family':'ui-monospace, monospace'});
+      t.textContent = 'Y'+yr;
+      svg.appendChild(t);
+    }
+
+    host.appendChild(svg);
+  }
+
+  function renderStackChart(rows){
+    const host = $('stackChart');
+    host.innerHTML = '';
+    const w = 760, h = 240, padL = 60, padR = 14, padT = 14, padB = 26;
+    const plotW = w - padL - padR, plotH = h - padT - padB;
+    const svg = svgEl('svg', {viewBox:`0 0 ${w} ${h}`, width:'100%', height:'auto', style:'display:block;'});
+    const n = rows.length;
+    let cumP = 0, cumI = 0;
+    const cumRows = rows.map(row => { cumP += row.principal; cumI += row.interest; return {cumP, cumI}; });
+    const maxY = niceMax(cumP + cumI);
+
+    for(let i=0;i<=4;i++){
+      const y = padT + plotH - (plotH*i/4);
+      svg.appendChild(svgEl('line', {x1:padL, y1:y, x2:padL+plotW, y2:y, stroke:'var(--rule)', 'stroke-width':1}));
+      const t = svgEl('text', {x:padL-8, y:y+3, 'text-anchor':'end', 'font-size':'9', fill:'var(--muted)', 'font-family':'ui-monospace, monospace'});
+      t.textContent = formatShort(maxY*i/4);
+      svg.appendChild(t);
+    }
+
+    function pathFor(getVal, base){
+      let d = `M ${padL} ${(padT+plotH - plotH*(base(0)/maxY)).toFixed(2)} `;
+      cumRows.forEach((row,i)=>{
+        const x = padL + plotW*(i/(n-1||1));
+        const y = padT + plotH - plotH*(getVal(row)/maxY);
+        d += `L ${x.toFixed(2)} ${y.toFixed(2)} `;
+      });
+      return d;
+    }
+    const dPrincipal = pathFor(r=>r.cumP, ()=>0);
+    const areaPrincipal = dPrincipal + `L ${padL+plotW} ${padT+plotH} L ${padL} ${padT+plotH} Z`;
+    svg.appendChild(svgEl('path', {d:areaPrincipal, fill:'var(--green)', opacity:'0.28'}));
+    svg.appendChild(svgEl('path', {d:dPrincipal, fill:'none', stroke:'var(--green-deep)', 'stroke-width':2}));
+
+    const dTotal = pathFor(r=>r.cumP+r.cumI, ()=>0);
+    const areaInterest = dTotal + ` L ${padL+plotW} ${(padT+plotH - plotH*(cumRows[n-1].cumP/maxY)).toFixed(2)} ` + [...cumRows].reverse().map((row,i)=>{
+      const idx = n-1-i;
+      const x = padL + plotW*(idx/(n-1||1));
+      const y = padT+plotH - plotH*(row.cumP/maxY);
+      return `L ${x.toFixed(2)} ${y.toFixed(2)} `;
+    }).join('') + 'Z';
+    svg.appendChild(svgEl('path', {d:areaInterest, fill:'var(--rust)', opacity:'0.28'}));
+    svg.appendChild(svgEl('path', {d:dTotal, fill:'none', stroke:'var(--rust-deep)', 'stroke-width':2}));
+
+    const yearsTotal = Math.ceil(n/12);
+    const step = Math.max(1, Math.round(yearsTotal/8));
+    for(let yr=0; yr<=yearsTotal; yr+=step){
+      const idx = Math.min(n-1, yr*12);
+      const x = padL + plotW * (idx/(n-1||1));
+      const t = svgEl('text', {x, y:h-8, 'text-anchor':'middle', 'font-size':'9', fill:'var(--muted)', 'font-family':'ui-monospace, monospace'});
+      t.textContent = 'Y'+yr;
+      svg.appendChild(t);
+    }
+    host.appendChild(svg);
+  }
+
+  function formatShort(n){
+    if(n >= 10000000) return '₹'+(n/10000000).toFixed(1)+'Cr';
+    if(n >= 100000) return '₹'+(n/100000).toFixed(1)+'L';
+    if(n >= 1000) return '₹'+(n/1000).toFixed(0)+'k';
+    return '₹'+Math.round(n);
+  }
+
+  function renderTable(){
+    const body = $('scheduleBody');
+    body.innerHTML = '';
+    $('periodHead').textContent = viewMode === 'yearly' ? 'Year' : 'Month';
+    const frag = document.createDocumentFragment();
+
+    if(viewMode === 'monthly'){
+      scheduleMonthly.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="mono">${row.month}</td>
+          <td class="mono">${formatINR(row.emi)}</td>
+          <td class="mono principal">${formatINR(row.principal)}</td>
+          <td class="mono interest">${formatINR(row.interest)}</td>
+          <td class="mono">${formatINR(row.balance)}</td>`;
+        frag.appendChild(tr);
+      });
+    } else {
+      const years = Math.ceil(scheduleMonthly.length/12);
+      for(let y=0; y<years; y++){
+        const slice = scheduleMonthly.slice(y*12, y*12+12);
+        const principal = slice.reduce((s,r)=>s+r.principal,0);
+        const interest = slice.reduce((s,r)=>s+r.interest,0);
+        const emiSum = slice.reduce((s,r)=>s+r.emi,0);
+        const balance = slice[slice.length-1].balance;
+        const tr = document.createElement('tr');
+        tr.className = 'year-row';
+        tr.innerHTML = `
+          <td class="mono">Year ${y+1}</td>
+          <td class="mono">${formatINR(emiSum)}</td>
+          <td class="mono principal">${formatINR(principal)}</td>
+          <td class="mono interest">${formatINR(interest)}</td>
+          <td class="mono">${formatINR(balance)}</td>`;
+        frag.appendChild(tr);
+      }
+    }
+    body.appendChild(frag);
+  }
+
+  $('btnYearly').addEventListener('click', () => {
+    viewMode = 'yearly';
+    $('btnYearly').classList.add('active');
+    $('btnMonthly').classList.remove('active');
+    renderTable();
+  });
+  $('btnMonthly').addEventListener('click', () => {
+    viewMode = 'monthly';
+    $('btnMonthly').classList.add('active');
+    $('btnYearly').classList.remove('active');
+    renderTable();
+  });
+
+  function recompute(){
+    const { amount, rate, years } = state;
+    const result = buildSchedule(amount, rate, years);
+    scheduleMonthly = result.rows;
+    const emi = result.emi;
+    const totalPayment = scheduleMonthly.reduce((s,r)=>s+r.emi,0);
+    const totalInterest = scheduleMonthly.reduce((s,r)=>s+r.interest,0);
+
+    $('emiOut').textContent = '₹' + formatINR(emi);
+    $('emiCount').textContent = (years*12) + ' monthly instalments';
+    $('principalOut').textContent = '₹' + formatINR(amount);
+    $('interestOut').textContent = '₹' + formatINR(totalInterest);
+    $('totalOut').textContent = '₹' + formatINR(totalPayment);
+
+    const pctP = totalPayment ? Math.round((amount/totalPayment)*100) : 0;
+    $('pctPrincipal').textContent = pctP + '%';
+    $('pctInterest').textContent = (100-pctP) + '%';
+
+    renderDonut(amount, totalInterest);
+    renderBalanceChart(scheduleMonthly);
+    renderStackChart(scheduleMonthly);
+    renderTable();
+  }
+
+  syncFromRanges();
+})();
+</script>
+</body>
+</html>

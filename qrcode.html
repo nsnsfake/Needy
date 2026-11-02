@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artistic QR Code Generator</title>
+    <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--surface);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 800px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        h1 {
+            grid-column: span 2;
+            text-align: center;
+            margin-top: 0;
+            color: var(--text);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        input[type="text"], select {
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        .color-pickers {
+            display: flex;
+            gap: 15px;
+        }
+
+        input[type="color"] {
+            border: none;
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #4f46e5;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--background);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px dashed #cbd5e1;
+        }
+
+        #qr-canvas {
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        #download-btn {
+            background-color: #10b981;
+            width: 100%;
+        }
+
+        #download-btn:hover {
+            background-color: #059669;
+        }
+
+        /* Responsive Design for smaller screens */
+        @media (max-width: 600px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Artistic QR Code Maker</h1>
+        
+        <div class="controls">
+            <div class="input-group">
+                <label for="qr-data">Website URL or Text</label>
+                <input type="text" id="qr-data" value="https://google.com" placeholder="Enter text or URL...">
+            </div>
+
+            <div class="input-group">
+                <label for="dot-style">Pattern Style</label>
+                <select id="dot-style">
+                    <option value="rounded">Rounded</option>
+                    <option value="dots">Dots</option>
+                    <option value="classy">Classy</option>
+                    <option value="classy-rounded">Classy Rounded</option>
+                    <option value="square">Square</option>
+                    <option value="extra-rounded">Extra Rounded</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="corner-style">Corner Square Style</label>
+                <select id="corner-style">
+                    <option value="extra-rounded">Extra Rounded</option>
+                    <option value="dot">Dot</option>
+                    <option value="square">Square</option>
+                </select>
+            </div>
+
+            <div class="color-pickers">
+                <div class="input-group" style="flex: 1;">
+                    <label for="qr-color">QR Color</label>
+                    <input type="color" id="qr-color" value="#6366f1">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label for="bg-color">Background</label>
+                    <input type="color" id="bg-color" value="#ffffff">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="logo-url">Logo Image URL (Optional)</label>
+                <input type="text" id="logo-url" placeholder="https://example.com/logo.png">
+            </div>
+
+            <button id="generate-btn">Generate QR Code</button>
+        </div>
+
+        <div class="preview">
+            <div id="qr-canvas"></div>
+            <button id="download-btn">Download Image (PNG)</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the QR Code with default settings
+        const qrCode = new QRCodeStyling({
+            width: 300,
+            height: 300,
+            type: "svg",
+            data: "https://google.com",
+            image: "",
+            dotsOptions: {
+                color: "#6366f1",
+                type: "rounded"
+            },
+            cornersSquareOptions: {
+                color: "#6366f1",
+                type: "extra-rounded"
+            },
+            backgroundOptions: {
+                color: "#ffffff",
+            },
+            imageOptions: {
+                crossOrigin: "anonymous",
+                margin: 10
+            }
+        });
+
+        // Append it to the DOM
+        qrCode.append(document.getElementById("qr-canvas"));
+
+        // Function to update the QR code based on user inputs
+        function generateQR() {
+            const data = document.getElementById("qr-data").value || "https://google.com";
+            const dotStyle = document.getElementById("dot-style").value;
+            const cornerStyle = document.getElementById("corner-style").value;
+            const qrColor = document.getElementById("qr-color").value;
+            const bgColor = document.getElementById("bg-color").value;
+            const logoUrl = document.getElementById("logo-url").value;
+
+            qrCode.update({
+                data: data,
+                image: logoUrl,
+                dotsOptions: {
+                    color: qrColor,
+                    type: dotStyle
+                },
+                cornersSquareOptions: {
+                    color: qrColor,
+                    type: cornerStyle
+                },
+                backgroundOptions: {
+                    color: bgColor
+                }
+            });
+        }
+
+        // Event Listeners
+        document.getElementById("generate-btn").addEventListener("click", generateQR);
+        
+        // Live update when colors or dropdowns change
+        document.getElementById("qr-color").addEventListener("input", generateQR);
+        document.getElementById("bg-color").addEventListener("input", generateQR);
+        document.getElementById("dot-style").addEventListener("change", generateQR);
+        document.getElementById("corner-style").addEventListener("change", generateQR);
+
+        // Download functionality
+        document.getElementById("download-btn").addEventListener("click", () => {
+            qrCode.download({ name: "my-artistic-qr", extension: "png" });
+        });
+    </script>
+</body>
+</html>

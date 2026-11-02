@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Planner Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root { --primary: #1e40af; --secondary: #10b981; --bg: #f8fafc; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
+        .container { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); max-width: 1000px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: 320px 1fr; gap: 40px; }
+        @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
+        .inputs { display: flex; flex-direction: column; gap: 15px; }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 5px; }
+        input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; transition: border 0.2s; }
+        input:focus { border-color: var(--primary); outline: none; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        button { flex: 1; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; border: none; }
+        .btn-calc { background: var(--primary); color: white; }
+        .btn-pdf { background: #64748b; color: white; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .summary { margin-top: 25px; background: #f1f5f9; padding: 20px; border-radius: 12px; }
+        .stat { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 1rem; }
+        .stat-val { font-weight: 800; }
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; font-size: 0.85rem; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        th { color: #64748b; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="report-content">
+    <div class="header">
+        <h1 style="margin:0; font-size: 1.5rem; color: var(--primary);">Investment Growth Report</h1>
+        <div id="report-date" style="font-size: 0.8rem; color: #94a3b8;"></div>
+    </div>
+
+    <div class="grid">
+        <div class="inputs">
+            <div class="input-group">
+                <label>Lumpsum Investment</label>
+                <input type="number" id="lumpsum" value="100000">
+            </div>
+            <div class="input-group">
+                <label>Investment Frequency</label>
+                <select id="type"><option value="12">Monthly SIP</option><option value="1">Yearly</option></select>
+            </div>
+            <div class="input-group">
+                <label>Installment Amount</label>
+                <input type="number" id="amount" value="10000">
+            </div>
+            <div class="input-group">
+                <label>Expected Return (%)</label>
+                <input type="number" id="rate" value="12">
+            </div>
+            <div class="input-group">
+                <label>Tenure (Years)</label>
+                <input type="number" id="years" value="15">
+            </div>
+            <div class="input-group">
+                <label>Yearly Step-up (%)</label>
+                <input type="number" id="increment" value="10">
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn-calc" onclick="calculate()">Recalculate</button>
+                <button class="btn-pdf" onclick="downloadPDF()">Export PDF</button>
+            </div>
+
+            <div class="summary">
+                <div class="stat"><span>Total Invested</span><span class="stat-val" id="dispInv">₹0</span></div>
+                <div class="stat"><span>Wealth Gained</span><span class="stat-val" id="dispGain" style="color:var(--secondary)">₹0</span></div>
+                <div class="stat" style="border-top: 1px solid #cbd5e1; padding-top: 10px; margin-top: 5px;">
+                    <span>Final Corpus</span><span class="stat-val" id="dispTotal" style="color:var(--primary)">₹0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="visuals">
+            <div style="height: 300px; margin-bottom: 20px;">
+                <canvas id="growthChart"></canvas>
+            </div>
+            <div id="tableContainer"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let myChart;
+    document.getElementById('report-date').innerText = new Date().toLocaleDateString();
+
+    function calculate() {
+        let lumpsum = parseFloat(document.getElementById('lumpsum').value) || 0;
+        let recurring = parseFloat(document.getElementById('amount').value) || 0;
+        const rate = parseFloat(document.getElementById('rate').value) / 100;
+        const years = parseInt(document.getElementById('years').value);
+        const increment = parseFloat(document.getElementById('increment').value) / 100;
+        const type = parseInt(document.getElementById('type').value);
+
+        let totalInvested = lumpsum;
+        let totalValue = lumpsum;
+        
+        let labels = ['Start'];
+        let investedData = [lumpsum];
+        let totalData = [lumpsum];
+        let tableHTML = `<table><thead><tr><th>Year</th><th>Annual Investment</th><th>Total Invested</th><th>Market Value</th></tr></thead><tbody>`;
+
+        for (let i = 1; i <= years; i++) {
+            let annualContribution = (type === 12) ? recurring * 12 : recurring;
+            totalInvested += annualContribution;
+
+            if (type === 12) {
+                let monthlyRate = rate / 12;
+                for (let m = 1; m <= 12; m++) {
+                    totalValue = (totalValue + recurring) * (1 + monthlyRate);
+                }
+            } else {
+                totalValue = (totalValue + recurring) * (1 + rate);
+            }
+
+            labels.push(`Year ${i}`);
+            investedData.push(Math.round(totalInvested));
+            totalData.push(Math.round(totalValue));
+            
+            tableHTML += `<tr><td>${i}</td><td>₹${Math.round(annualContribution).toLocaleString()}</td><td>₹${Math.round(totalInvested).toLocaleString()}</td><td>₹${Math.round(totalValue).toLocaleString()}</td></tr>`;
+            
+            recurring += (recurring * increment);
+        }
+
+        tableHTML += `</tbody></table>`;
+        document.getElementById('tableContainer').innerHTML = tableHTML;
+        document.getElementById('dispInv').innerText = '₹' + Math.round(totalInvested).toLocaleString();
+        document.getElementById('dispTotal').innerText = '₹' + Math.round(totalValue).toLocaleString();
+        document.getElementById('dispGain').innerText = '₹' + Math.round(totalValue - totalInvested).toLocaleString();
+
+        updateChart(labels, investedData, totalData);
+    }
+
+    function updateChart(labels, invested, total) {
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Market Value', data: total, borderColor: '#1e40af', backgroundColor: 'rgba(30, 64, 175, 0.1)', fill: true, tension: 0.4 },
+                    { label: 'Invested Capital', data: invested, borderColor: '#94a3b8', borderDash: [5, 5], fill: false }
+                ]
+            },
+            options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { ticks: { callback: v => '₹' + v.toLocaleString() } } } }
+        });
+    }
+
+    function downloadPDF() {
+        const element = document.getElementById('report-content');
+        const opt = {
+            margin: 0.5,
+            filename: 'Investment_Plan.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    calculate();
+</script>
+</body>
+</html>

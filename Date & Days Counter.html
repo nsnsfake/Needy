@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Date & Days Counter</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-surface: #1e293b;
+      --bg-surface-elevated: #334155;
+      --border-subtle: #475569;
+      --border-focus: #6366f1;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --brand-primary: #6366f1;
+      --brand-hover: #4f46e5;
+      --accent-success: #10b981;
+      --accent-warning: #f59e0b;
+      --accent-danger: #ef4444;
+      --badge-computed: #0284c7;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-elevation: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 1rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.35rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-elevation);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 680px) {
+      .form-grid-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      position: relative;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .field-status {
+      font-size: 0.72rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    .status-active {
+      background-color: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+    }
+
+    .status-computed {
+      background-color: rgba(2, 132, 199, 0.2);
+      color: #38bdf8;
+      border: 1px solid rgba(2, 132, 199, 0.4);
+    }
+
+    .status-empty {
+      background-color: rgba(148, 163, 184, 0.1);
+      color: var(--text-muted);
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="number"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      color: var(--text-main);
+      background-color: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+
+    input.computed-target {
+      border-color: #38bdf8;
+      background-color: rgba(2, 132, 199, 0.1);
+    }
+
+    .req-star {
+      color: var(--accent-danger);
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    button {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.4rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background-color: var(--brand-primary);
+      color: #ffffff;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--brand-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover {
+      background-color: #475569;
+    }
+
+    .btn-danger {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover {
+      background-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .feedback-banner {
+      display: none;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      margin-top: 1rem;
+      animation: fadeIn 0.25s ease forwards;
+    }
+
+    .feedback-banner.show {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .feedback-error {
+      background-color: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .feedback-info {
+      background-color: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .history-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+      min-width: 600px;
+    }
+
+    th, td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    th {
+      background-color: var(--bg-surface-elevated);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .tag-days {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .tag-positive {
+      background-color: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .tag-negative {
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+
+    .empty-history {
+      padding: 2.5rem 1rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Date & Days Counter</h1>
+      <p>Enter any 2 parameters to automatically calculate the 3rd. Provide a label to record.</p>
+    </header>
+
+    <main class="card">
+      <div class="form-grid">
+        <!-- Mandatory String Column/Field -->
+        <div class="form-group">
+          <label for="eventLabel">
+            <span>Event / Label / Note <span class="req-star">*</span></span>
+            <span class="field-status status-active">Mandatory</span>
+          </label>
+          <input 
+            type="text" 
+            id="eventLabel" 
+            placeholder="e.g. Project Sprint, Subscription Renewal, Vacation Countdown" 
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Dynamic Calculation Triangle: Start Date, Days, End Date -->
+        <div class="form-grid form-grid-3">
+          <div class="form-group">
+            <label for="startDate">
+              <span>Start Date</span>
+              <span id="startStatus" class="field-status status-empty">Empty</span>
+            </label>
+            <input type="date" id="startDate" />
+          </div>
+
+          <div class="form-group">
+            <label for="daysCount">
+              <span>Days Count (+/-)</span>
+              <span id="daysStatus" class="field-status status-empty">Empty</span>
+            </label>
+            <input type="number" id="daysCount" placeholder="e.g. 30 or -15" />
+          </div>
+
+          <div class="form-group">
+            <label for="endDate">
+              <span>End Date</span>
+              <span id="endStatus" class="field-status status-empty">Empty</span>
+            </label>
+            <input type="date" id="endDate" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="btn-group">
+        <button id="calculateBtn" class="btn-primary" type="button">
+          Compute & Save Record
+        </button>
+        <button id="clearBtn" class="btn-secondary" type="button">
+          Reset Fields
+        </button>
+      </div>
+
+      <!-- Live feedback notification -->
+      <div id="feedbackBanner" class="feedback-banner"></div>
+    </main>
+
+    <section class="card">
+      <div class="history-header">
+        <h2>Logged Calculations</h2>
+        <div class="btn-group" style="margin-top: 0;">
+          <button id="exportCsvBtn" class="btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" type="button">
+            Export CSV
+          </button>
+          <button id="clearHistoryBtn" class="btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" type="button">
+            Clear History
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Label / Note</th>
+              <th>Start Date</th>
+              <th>Days</th>
+              <th>End Date</th>
+              <th>Computed</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="historyTbody">
+            <tr>
+              <td colspan="6" class="empty-history">No records saved yet. Calculate above to populate history.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const labelInput = document.getElementById('eventLabel');
+    const startInput = document.getElementById('startDate');
+    const daysInput = document.getElementById('daysCount');
+    const endInput = document.getElementById('endDate');
+
+    const startStatus = document.getElementById('startStatus');
+    const daysStatus = document.getElementById('daysStatus');
+    const endStatus = document.getElementById('endStatus');
+
+    const calculateBtn = document.getElementById('calculateBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const feedbackBanner = document.getElementById('feedbackBanner');
+    const historyTbody = document.getElementById('historyTbody');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+    let historyRecords = [];
+
+    // Parse YYYY-MM-DD to UTC date to prevent timezone shift issues
+    function parseDate(str) {
+      if (!str) return null;
+      const [y, m, d] = str.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, d));
+    }
+
+    // Format UTC Date object to YYYY-MM-DD
+    function formatDate(d) {
+      const year = d.getUTCFullYear();
+      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // Add days to a Date object safely in UTC
+    function addDays(d, days) {
+      const result = new Date(d.getTime());
+      result.setUTCDate(result.getUTCDate() + days);
+      return result;
+    }
+
+    // Difference in whole calendar days between two UTC dates
+    function diffDays(d1, d2) {
+      const MS_PER_DAY = 1000 * 60 * 60 * 24;
+      return Math.round((d2.getTime() - d1.getTime()) / MS_PER_DAY);
+    }
+
+    function updateFieldStates() {
+      const hasStart = Boolean(startInput.value);
+      const hasDays = daysInput.value.trim() !== '';
+      const hasEnd = Boolean(endInput.value);
+
+      const filledCount = (hasStart ? 1 : 0) + (hasDays ? 1 : 0) + (hasEnd ? 1 : 0);
+
+      // Reset classes
+      [startInput, daysInput, endInput].forEach(inp => inp.classList.remove('computed-target'));
+
+      function setStatus(el, text, type) {
+        el.textContent = text;
+        el.className = 'field-status ' + (
+          type === 'filled' ? 'status-active' :
+          type === 'target' ? 'status-computed' : 'status-empty'
+        );
+      }
+
+      if (filledCount === 2) {
+        // Case A: Start + Days -> Computes End
+        if (hasStart && hasDays && !hasEnd) {
+          setStatus(startStatus, 'Provided', 'filled');
+          setStatus(daysStatus, 'Provided', 'filled');
+          setStatus(endStatus, 'Will Compute', 'target');
+          endInput.classList.add('computed-target');
+        }
+        // Case B: Start + End -> Computes Days
+        else if (hasStart && !hasDays && hasEnd) {
+          setStatus(startStatus, 'Provided', 'filled');
+          setStatus(daysStatus, 'Will Compute', 'target');
+          setStatus(endStatus, 'Provided', 'filled');
+          daysInput.classList.add('computed-target');
+        }
+        // Case C: End + Days -> Computes Start
+        else if (!hasStart && hasDays && hasEnd) {
+          setStatus(startStatus, 'Will Compute', 'target');
+          setStatus(daysStatus, 'Provided', 'filled');
+          setStatus(endStatus, 'Provided', 'filled');
+          startInput.classList.add('computed-target');
+        }
+      } else {
+        setStatus(startStatus, hasStart ? 'Provided' : 'Empty', hasStart ? 'filled' : 'empty');
+        setStatus(daysStatus, hasDays ? 'Provided' : 'Empty', hasDays ? 'filled' : 'empty');
+        setStatus(endStatus, hasEnd ? 'Provided' : 'Empty', hasEnd ? 'filled' : 'empty');
+      }
+    }
+
+    function showBanner(message, isError = false) {
+      feedbackBanner.textContent = message;
+      feedbackBanner.className = 'feedback-banner show ' + (isError ? 'feedback-error' : 'feedback-info');
+    }
+
+    function hideBanner() {
+      feedbackBanner.className = 'feedback-banner';
+      feedbackBanner.textContent = '';
+    }
+
+    function performCalculation() {
+      hideBanner();
+
+      const label = labelInput.value.trim();
+      if (!label) {
+        showBanner('Error: The "Event / Label / Note" string column is mandatory.', true);
+        labelInput.focus();
+        return;
+      }
+
+      const hasStart = Boolean(startInput.value);
+      const hasDays = daysInput.value.trim() !== '';
+      const hasEnd = Boolean(endInput.value);
+
+      const count = (hasStart ? 1 : 0) + (hasDays ? 1 : 0) + (hasEnd ? 1 : 0);
+
+      if (count < 2) {
+        showBanner('Please fill in exactly 2 of the 3 triangle parameters (Start Date, Days, End Date).', true);
+        return;
+      }
+
+      if (count === 3) {
+        showBanner('All 3 fields are already filled. Clear one field to re-compute it from the remaining two.', true);
+        return;
+      }
+
+      let computedField = '';
+      let sDate = startInput.value;
+      let dVal = daysInput.value !== '' ? parseInt(daysInput.value, 10) : null;
+      let eDate = endInput.value;
+
+      try {
+        // Case A: Start Date + Days => Compute End Date
+        if (hasStart && hasDays) {
+          if (isNaN(dVal)) throw new Error('Days must be a valid integer.');
+          const startDateObj = parseDate(sDate);
+          const endDateObj = addDays(startDateObj, dVal);
+          eDate = formatDate(endDateObj);
+          endInput.value = eDate;
+          computedField = 'End Date';
+        }
+        // Case B: Start Date + End Date => Compute Days
+        else if (hasStart && hasEnd) {
+          const startDateObj = parseDate(sDate);
+          const endDateObj = parseDate(eDate);
+          dVal = diffDays(startDateObj, endDateObj);
+          daysInput.value = dVal;
+          computedField = 'Days Count';
+        }
+        // Case C: End Date + Days => Compute Start Date
+        else if (hasEnd && hasDays) {
+          if (isNaN(dVal)) throw new Error('Days must be a valid integer.');
+          const endDateObj = parseDate(eDate);
+          const startDateObj = addDays(endDateObj, -dVal);
+          sDate = formatDate(startDateObj);
+          startInput.value = sDate;
+          computedField = 'Start Date';
+        }
+
+        updateFieldStates();
+
+        // Add to history
+        const record = {
+          label: label,
+          startDate: sDate,
+          days: dVal,
+          endDate: eDate,
+          computed: computedField,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        };
+
+        historyRecords.unshift(record);
+        renderHistory();
+        showBanner(`Successfully computed ${computedField} and saved to history.`);
+      } catch (err) {
+        showBanner(`Calculation error: ${err.message}`, true);
+      }
+    }
+
+    function renderHistory() {
+      if (historyRecords.length === 0) {
+        historyTbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="empty-history">No records saved yet. Calculate above to populate history.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      historyTbody.innerHTML = historyRecords.map(item => {
+        const daysClass = item.days >= 0 ? 'tag-positive' : 'tag-negative';
+        const daysPrefix = item.days > 0 ? '+' : '';
+        return `
+          <tr>
+            <td><strong>${escapeHtml(item.label)}</strong></td>
+            <td>${escapeHtml(item.startDate)}</td>
+            <td><span class="tag-days ${daysClass}">${daysPrefix}${item.days} days</span></td>
+            <td>${escapeHtml(item.endDate)}</td>
+            <td><span class="field-status status-computed">${item.computed}</span></td>
+            <td style="color: var(--text-muted); font-size: 0.8rem;">${item.timestamp}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function exportToCsv() {
+      if (historyRecords.length === 0) {
+        showBanner('No history records available to export.', true);
+        return;
+      }
+
+      const headers = ['Event Label', 'Start Date', 'Days', 'End Date', 'Computed Target', 'Time'];
+      const rows = historyRecords.map(r => [
+        `"${(r.label || '').replace(/"/g, '""')}"`,
+        r.startDate,
+        r.days,
+        r.endDate,
+        `"${r.computed}"`,
+        `"${r.timestamp}"`
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `date_counter_history_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function clearForm() {
+      labelInput.value = '';
+      startInput.value = '';
+      daysInput.value = '';
+      endInput.value = '';
+      updateFieldStates();
+      hideBanner();
+    }
+
+    function clearHistory() {
+      historyRecords = [];
+      renderHistory();
+      hideBanner();
+    }
+
+    [startInput, daysInput, endInput].forEach(inp => {
+      inp.addEventListener('input', updateFieldStates);
+      inp.addEventListener('change', updateFieldStates);
+    });
+
+    calculateBtn.addEventListener('click', performCalculation);
+    clearBtn.addEventListener('click', clearForm);
+    exportCsvBtn.addEventListener('click', exportToCsv);
+    clearHistoryBtn.addEventListener('click', clearHistory);
+
+    // Initial setup
+    updateFieldStates();
+  </script>
+</body>
+</html>
