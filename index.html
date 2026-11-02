@@ -3,73 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Needy - Welcome</title>
+    <title>Web Tools Suite — Dashboard</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-hover: #0ea5e9;
         }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
             min-height: 100vh;
+            padding: 40px 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            text-align: center;
-            padding: 20px;
         }
         .container {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 40px 60px;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            max-width: 600px;
+            max-width: 1000px;
             width: 100%;
         }
-        h1 {
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        header h1 {
             font-size: 2.5rem;
-            margin-bottom: 20px;
-            font-weight: 700;
-            letter-spacing: -1px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        p {
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            color: rgba(255, 255, 255, 0.9);
+        header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
         }
-        .btn {
-            display: inline-block;
-            background: #ffffff;
-            color: #667eea;
-            padding: 12px 30px;
-            border-radius: 30px;
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
             text-decoration: none;
-            font-weight: bold;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            color: inherit;
         }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.15);
+        }
+        .card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 20px;
+        }
+        .card .badge {
+            align-self: flex-start;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1>Welcome to Needy</h1>
-        <a href="pages/Date%20%26%20Days%20Counter.html" target="_blank" class="btn">days counter</a>
-        <a href="pages/sip-calculator.html" target="_blank" class="btn">sip</a>
-        <a href="main/emi-calculator.html" target="_blank" class="btn">emi</a>
-        <a href="pages/Finance-Calc.html" target="_blank" class="btn">finane</a>
-       
-    </div>
+        <header>
+            <h1>Web Tools Suite</h1>
+            <p>A collection of calculators, converters, and utilities ready for GitHub Pages.</p>
+        </header>
 
+        <div class="grid">
+            <a href="date-counter.html" class="card">
+                <div>
+                    <span class="badge">Utility</span>
+                    <h3>Date & Days Counter</h3>
+                    <p>Calculate start dates, end dates, and day counts with custom labels and CSV export.</p>
+                </div>
+                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Launch Tool &rarr;</span>
+            </a>
+
+            <a href="emi-calculator.html" class="card">
+                <div>
+                    <span class="badge">Finance</span>
+                    <h3>EMI Ledger Calculator</h3>
+                    <p>Loan repayment calculator featuring reducing-balance compounding, charts, and amortization tables.</p>
+                </div>
+                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Launch Tool &rarr;</span>
+            </a>
+
+            <a href="image-resizer.html" class="card">
+                <div>
+                    <span class="badge">Media</span>
+                    <h3>Image Resizer</h3>
+                    <p>Quickly upload, scale with aspect ratio lock, and download images directly in your browser.</p>
+                </div>
+                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Launch Tool &rarr;</span>
+            </a>
+
+            <a href="pro-calculator.html" class="card">
+                <div>
+                    <span class="badge">Utility</span>
+                    <h3>Pro Calculator</h3>
+                    <p>Responsive scientific calculator with calculation history and local storage support.</p>
+                </div>
+                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Launch Tool &rarr;</span>
+            </a>
+
+            <a href="finance-calculator.html" class="card">
+                <div>
+                    <span class="badge">Finance</span>
+                    <h3>Finance Calc & Visualizer</h3>
+                    <p>Simple & compound interest solver with GST breakdown and interactive growth charts.</p>
+                </div>
+                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Launch Tool &rarr;</span>
+            </a>
+
+            <a href="qrcode-generator.html" class="card">
+                <div>
+                    <span class="badge">Utility</span>
+                    <h3>Artistic QR Generator</h3>
+                    <p>Create stylized QR codes with custom dot patterns, corner styles, colors, and embedded logos.</p>
+                </div>
+                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Launch Tool &rarr;</span>
+            </a>
+
+            <a href="investment-planner.html" class="card">
+                <div>
+                    <span class="badge">Finance</span>
+                    <h3>Investment Growth Report</h3>
+                    <p>Plan SIPs or lump sums with step-up increments, visual projections, and PDF export.</p>
+                </div>
+                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Launch Tool &rarr;</span>
+            </a>
+
+            <a href="sip-calculator.html" class="card">
+                <div>
+                    <span class="badge">Finance</span>
+                    <h3>Power of Compounding</h3>
+                    <p>Mobile-optimized SIP calculator with dual modes for investment amounts and target goals.</p>
+                </div>
+                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Launch Tool &rarr;</span>
+            </a>
+        </div>
+
+        <footer>
+            <p>Hosted on GitHub Pages &bull; Fully Client-Side & Secure</p>
+        </footer>
+    </div>
 </body>
 </html>
