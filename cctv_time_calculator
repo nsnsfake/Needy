@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CCTV Time Calculator</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#14181f;--mut:#667085;--bd:#d8dce3;--ac:#0b6bcb;--acx:#fff;--ok:#0a7d3c;--bad:#c62828;--res:#e8f1fc;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1116;--card:#171c24;--tx:#e8ebf0;--mut:#98a2b3;--bd:#2b3340;--ac:#4a9df0;--acx:#07111d;--ok:#4cc27d;--bad:#ff7b72;--res:#12263d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1116;--card:#171c24;--tx:#e8ebf0;--mut:#98a2b3;--bd:#2b3340;--ac:#4a9df0;--acx:#07111d;--ok:#4cc27d;--bad:#ff7b72;--res:#12263d;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:1.3rem;margin:4px 0 2px}
+p.sub{margin:0 0 14px;color:var(--mut);font-size:.9rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 10px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.row:last-child{margin-bottom:0}
+label{display:block;font-size:.8rem;color:var(--mut);margin-bottom:4px}
+input{width:100%;font:inherit;font-size:1.05rem;padding:10px;border:1px solid var(--bd);border-radius:9px;background:var(--bg);color:var(--tx);font-variant-numeric:tabular-nums}
+input.t{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em}
+input:focus{outline:2px solid var(--ac);outline-offset:0}
+input.err{border-color:var(--bad)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.seg button{font:inherit;font-size:.9rem;padding:10px 6px;border:1px solid var(--bd);border-radius:9px;background:var(--bg);color:var(--tx);cursor:pointer}
+.seg button.on{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:600}
+.off{font-size:1rem;font-weight:600}
+.off.a{color:var(--bad)}.off.b{color:var(--ok)}
+.res{background:var(--res);border-color:var(--ac)}
+.big{font-size:2rem;font-weight:700;font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;margin:2px 0}
+.dt{color:var(--mut);font-size:.95rem}
+.hint{font-size:.8rem;color:var(--mut);margin-top:8px}
+.actions{display:flex;gap:8px;margin-top:10px}
+.actions button{font:inherit;font-size:.9rem;padding:8px 12px;border:1px solid var(--bd);border-radius:9px;background:var(--card);color:var(--tx);cursor:pointer}
+</style>
+</head>
+<body>
+<main>
+<h1>CCTV Time Calculator</h1>
+<p class="sub">24-hour format · enter a known matching moment, then convert any time.</p>
+
+<div class="card">
+<h2>1 · Reference (same moment)</h2>
+<div class="row"><div><label>CCTV date</label><input type="date" id="rcd"></div>
+<div><label>CCTV time (HH:MM:SS)</label><input class="t" id="rct" inputmode="numeric" placeholder="00:00:00" maxlength="8"></div></div>
+<div class="row"><div><label>Real date</label><input type="date" id="rrd"></div>
+<div><label>Real time (HH:MM:SS)</label><input class="t" id="rrt" inputmode="numeric" placeholder="00:00:00" maxlength="8"></div></div>
+<div class="hint">Offset: <span id="off" class="off">—</span></div>
+</div>
+
+<div class="card">
+<h2>2 · Target</h2>
+<div class="seg"><button id="m1" class="on">CCTV → Real</button><button id="m2">Real → CCTV</button></div>
+<div class="row"><div><label id="tdl">CCTV date</label><input type="date" id="td"></div>
+<div><label id="ttl">CCTV time (HH:MM:SS)</label><input class="t" id="tt" inputmode="numeric" placeholder="00:00:00" maxlength="8"></div></div>
+</div>
+
+<div class="card res">
+<h2 id="rl">Real time</h2>
+<div class="big" id="rt">—</div>
+<div class="dt" id="rd">Fill in all fields above</div>
+<div class="actions"><button id="cp">Copy</button><button id="clr">Reset</button></div>
+</div>
+</main>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var mode=1;
+var p2=function(n){return String(n).padStart(2,'0')};
+var today=new Date();
+var td=today.getFullYear()+'-'+p2(today.getMonth()+1)+'-'+p2(today.getDate());
+['rcd','rrd','td'].forEach(function(i){$(i).value=td});
+
+function fmtTime(el){
+  var d=el.value.replace(/\D/g,'').slice(0,6),o='';
+  for(var i=0;i<d.length;i++){if(i==2||i==4)o+=':';o+=d[i]}
+  el.value=o;
+}
+function parse(d,t){
+  if(!d||!/^\d{1,2}:\d{2}(:\d{2})?$/.test(t))return null;
+  var x=t.split(':').map(Number),h=x[0],m=x[1],s=x[2]||0;
+  if(h>23||m>59||s>59)return null;
+  var y=d.split('-').map(Number);
+  return Date.UTC(y[0],y[1]-1,y[2],h,m,s);
+}
+function dur(ms){
+  var a=Math.abs(ms)/1000,d=Math.floor(a/86400),h=Math.floor(a%86400/3600),m=Math.floor(a%3600/60),s=Math.floor(a%60),o=[];
+  if(d)o.push(d+'d');if(h)o.push(h+'h');if(m)o.push(m+'m');if(s||!o.length)o.push(s+'s');
+  return o.join(' ');
+}
+var DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function show(ms){
+  var d=new Date(ms);
+  return {t:p2(d.getUTCHours())+':'+p2(d.getUTCMinutes())+':'+p2(d.getUTCSeconds()),
+    d:d.getUTCFullYear()+'-'+p2(d.getUTCMonth()+1)+'-'+p2(d.getUTCDate()),
+    w:DAYS[d.getUTCDay()]};
+}
+function mark(el,ok){el.classList.toggle('err',!ok&&el.value.length>0)}
+
+function calc(){
+  var rc=parse($('rcd').value,$('rct').value),rr=parse($('rrd').value,$('rrt').value),tg=parse($('td').value,$('tt').value);
+  mark($('rct'),rc!==null);mark($('rrt'),rr!==null);mark($('tt'),tg!==null);
+  var off=$('off');
+  var offset=null;
+  if(rc!==null&&rr!==null){
+    offset=rc-rr;
+    if(offset===0){off.textContent='CCTV is exactly on real time';off.className='off'}
+    else if(offset>0){off.textContent='CCTV is '+dur(offset)+' AHEAD of real';off.className='off a'}
+    else{off.textContent='CCTV is '+dur(offset)+' BEHIND real';off.className='off b'}
+  }else{off.textContent='—';off.className='off'}
+  if(offset===null||tg===null){$('rt').textContent='—';$('rd').textContent='Fill in all fields above';return}
+  var r=mode===1?tg-offset:tg+offset,s=show(r);
+  $('rt').textContent=s.t;
+  $('rd').textContent=s.w+' '+s.d;
+}
+function setMode(m){
+  mode=m;
+  $('m1').classList.toggle('on',m===1);$('m2').classList.toggle('on',m===2);
+  var a=m===1?'CCTV':'Real',b=m===1?'Real':'CCTV';
+  $('tdl').textContent=a+' date';$('ttl').textContent=a+' time (HH:MM:SS)';$('rl').textContent=b+' time';
+  calc();
+}
+['rct','rrt','tt'].forEach(function(i){$(i).addEventListener('input',function(){fmtTime(this);calc()})});
+['rcd','rrd','td'].forEach(function(i){$(i).addEventListener('input',calc)});
+$('m1').onclick=function(){setMode(1)};$('m2').onclick=function(){setMode(2)};
+$('cp').onclick=function(){
+  var v=$('rd').textContent.split(' ')[1];
+  if($('rt').textContent==='—')return;
+  var txt=v+' '+$('rt').textContent;
+  try{navigator.clipboard.writeText(txt);$('cp').textContent='Copied'}catch(e){$('cp').textContent=txt}
+  setTimeout(function(){$('cp').textContent='Copy'},1500);
+};
+$('clr').onclick=function(){
+  ['rct','rrt','tt'].forEach(function(i){$(i).value=''});
+  ['rcd','rrd','td'].forEach(function(i){$(i).value=td});
+  calc();
+};
+calc();
+})();
+</script>
+</body>
+</html>
